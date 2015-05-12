@@ -1,0 +1,165 @@
+var Bar = function (container, chartWidth, chartHeight, config) {
+  var width = chartWidth || 830,
+      height = chartHeight || 500;
+
+  var m = config && config.margin || {top: 20, right: 20, bottom: 30, left: 40};
+  var w = width - m.left - m.right,
+      h = height - m.top - m.bottom;
+
+  var data = config && config.data || [
+    {label: "A", value:.08167},
+    {label: "B", value:.01492},
+    {label: "C", value:.02780},
+    {label: "D", value:.04253},
+    {label: "E", value:.12702},
+    {label: "F", value:.02288},
+    {label: "G", value:.02022},
+    {label: "H", value:.06094},
+    {label: "I", value:.06973},
+    {label: "J", value:.00153},
+    {label: "K", value:.00747},
+    {label: "L", value:.04025},
+    {label: "M", value:.02517},
+    {label: "N", value:.06749},
+    {label: "O", value:.07507},
+    {label: "P", value:.01929},
+    {label: "Q", value:.00098},
+    {label: "R", value:.05987},
+    {label: "S", value:.06333},
+    {label: "T", value:.09056},
+    {label: "U", value:.02758},
+    {label: "V", value:.01037},
+    {label: "W", value:.02465},
+    {label: "X", value:.00150},
+    {label: "Y", value:.01971},
+    {label: "Z", value:.00074}
+  ];
+  data.forEach(function(d) {
+    d.value = +d.value;
+  });
+
+  var valueAxisName = config && config.valueAxisName || "";
+  var barWidthRatio = config && config.barWidthRatio || 0.1;
+  var valueDomain = config && config.valueDomain;
+  var valueAxisTickValues = config && config.valueAxisTickValues;
+  var bgLineValues = config && config.bgLineValues;
+
+  var color = config && config.color || "steelblue";
+
+  var valueFormat = config && config.valueFormat;  //d3.format(".0%");
+  var labelFormat = config && config.labelFormat;  //d3.format(".0%");
+
+  var barClick = config && config.barClick;
+  var barMouseover = config && config.barMouseover;
+  var barMouseout = config && config.barMouseout;
+  
+  var label = d3.scale.ordinal()
+      .rangeRoundBands([0, h], barWidthRatio)
+      .domain(data.map(function(d) { return d.label; }));
+  
+  var value = d3.scale.linear()
+      .range([0, w])
+      .domain(valueDomain || [0, d3.max(data, function(d) { return d.value; })]);
+
+  var labelAxis = d3.svg.axis()
+      .scale(label)
+      .orient("left");
+  
+  var valueAxis = d3.svg.axis()
+      .scale(value)
+      .orient("bottom");
+
+  if (typeof labelFormat !== 'undefined') {
+    labelAxis.tickFormat(labelFormat);
+  }
+  if (typeof valueFormat !== 'undefined') {
+    valueAxis.tickFormat(valueFormat);
+  }
+  if (typeof valueAxisTickValues !== 'undefined') {
+    valueAxis.tickValues(valueAxisTickValues);
+  }
+
+  //container
+  var canvas = container
+      .attr("width", width)
+      .attr("height", height)
+    .append("g")
+      .attr("transform", "translate(" + m.left + "," + m.top + ")");
+
+  //background line
+  if (typeof bgLineValues !== 'undefined') {
+    canvas.selectAll(".bgLine")
+        .data(bgLineValues)
+      .enter().append("path")
+        .attr("class", "bgLine")
+        .attr("d", function (d) { return "M" + value(d) + ",0V" + h; })
+        .attr("fill", "none")
+        .attr("shape-rendering", "crispEdges")
+        .attr("stroke-dasharray", "8 8")
+        .attr("stroke", "#bbb");
+  }
+
+  //bar
+  canvas.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", 0) //function(d) { return label(d.label); })
+      .attr("width", 0)
+      .attr("y", function(d) { return label(d.value); })
+      .attr("height", label.rangeBand())
+      .attr("fill", color)
+    .transition()
+      .duration(500)
+      .attr("width", function(d) { return value(d.value); });
+
+  //label Axis
+  var labelAxisContainer = canvas.append("g")
+      .attr("class", "label axis");
+      //.attr("transform", "translate(0," + h + ")");
+  labelAxisContainer.call(labelAxis);
+  labelAxisContainer.selectAll("line")
+    .attr("display", "none");
+  labelAxisContainer.selectAll("path")
+    .attr("fill", "none")
+    .attr("stroke", "#000")
+    .attr("shape-rendering", "crispEdges");
+
+  /*
+  //value Axis
+  var valueAxisContainer = canvas.append("g")
+      .attr("class", "value axis");
+  valueAxisContainer.call(valueAxis);
+  valueAxisContainer.selectAll("line")
+    .attr("fill", "none")
+    .attr("stroke", "#000")
+    .attr("shape-rendering", "crispEdges");
+  valueAxisContainer.selectAll("path")
+    .attr("fill", "none")
+    .attr("stroke", "#000")
+    .attr("shape-rendering", "crispEdges");
+  valueAxisContainer.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text(valueAxisName);
+  */
+
+  //interactive
+  if (typeof barClick !== 'undefined') {
+    $(container[0]).delegate(".bar", "click", barClick);
+  }
+  if (typeof barMouseover !== 'undefined') {
+    $(container[0]).delegate(".bar", "mouseover", barMouseover);
+  }
+  if (typeof barMouseout !== 'undefined') {
+    $(container[0]).delegate(".bar", "mouseout", barMouseout);
+  }
+
+  /*
+  d3.tsv("3885304_files/data.tsv", function(error, data) {
+  });
+  */
+
+}
